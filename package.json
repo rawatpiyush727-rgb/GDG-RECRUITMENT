@@ -1,0 +1,11 @@
+{
+  "name": "gdg-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GDG On Campus Web Application and Backend API",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "start:backend": "npm --prefix backend run start"
+  }
+}
