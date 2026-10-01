@@ -19,19 +19,55 @@ const defaultAllowedOrigins = [
   "http://localhost:5000",
   "http://127.0.0.1:5000",
   "http://localhost:3000",
+  "https://gdg-on-campus-ro3c.onrender.com",
 ];
 
-const allowedOrigins = process.env.FRONTEND_URL
-  ? [...defaultAllowedOrigins, process.env.FRONTEND_URL]
-  : defaultAllowedOrigins;
+const parseOrigins = (raw) => {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+};
+
+const envOrigins = parseOrigins(process.env.FRONTEND_URL);
+
+const allowedOrigins = Array.from(
+  new Set([
+    ...defaultAllowedOrigins.map((origin) => origin.replace(/\/+$/, "")),
+    ...envOrigins,
+  ])
+);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (such as mobile apps, curl, or server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+    const cleanOrigin = origin.replace(/\/+$/, "");
+    if (
+      allowedOrigins.includes(origin) ||
+      allowedOrigins.includes(cleanOrigin)
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+  ],
+  optionsSuccessStatus: 204,
+};
 
 // CORS configuration supporting Vite dev server & production client with credentials
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(cookieParser());
