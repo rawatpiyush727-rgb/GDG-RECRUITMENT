@@ -19,13 +19,22 @@ export function AuthProvider({ children }) {
     try {
       const data = await api.get("/api/auth/me");
       if (data && data.user) {
+        if (data.token && typeof window !== "undefined" && window.localStorage) {
+          window.localStorage.setItem("gdg_auth_token", data.token);
+        }
         setUser(data.user);
       } else {
+        if (typeof window !== "undefined" && window.localStorage) {
+          window.localStorage.removeItem("gdg_auth_token");
+        }
         setUser(null);
       }
     } catch (err) {
       if (err.status !== 401) {
         console.warn("Session check returned non-401 error:", err.message);
+      }
+      if (err.status === 401 && typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.removeItem("gdg_auth_token");
       }
       setUser(null);
     } finally {
@@ -38,7 +47,17 @@ export function AuthProvider({ children }) {
     api.get("/api/auth/me")
       .then((data) => {
         if (mounted) {
-          setUser(data?.user || null);
+          if (data?.user) {
+            if (data.token && typeof window !== "undefined" && window.localStorage) {
+              window.localStorage.setItem("gdg_auth_token", data.token);
+            }
+            setUser(data.user);
+          } else {
+            if (typeof window !== "undefined" && window.localStorage) {
+              window.localStorage.removeItem("gdg_auth_token");
+            }
+            setUser(null);
+          }
         }
       })
       .catch((err) => {
@@ -46,6 +65,9 @@ export function AuthProvider({ children }) {
           console.warn("Session check returned non-401 error:", err.message);
         }
         if (mounted) {
+          if (err.status === 401 && typeof window !== "undefined" && window.localStorage) {
+            window.localStorage.removeItem("gdg_auth_token");
+          }
           setUser(null);
         }
       })
@@ -63,6 +85,9 @@ export function AuthProvider({ children }) {
   const login = async ({ email, password }) => {
     const data = await api.post("/api/auth/login", { email, password });
     if (data?.user) {
+      if (data.token && typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem("gdg_auth_token", data.token);
+      }
       setUser(data.user);
     }
     return data?.user;
@@ -71,6 +96,9 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = async (credential) => {
     const data = await api.post("/api/auth/google", { credential });
     if (data?.user) {
+      if (data.token && typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem("gdg_auth_token", data.token);
+      }
       setUser(data.user);
     }
     return data?.user;
@@ -79,6 +107,9 @@ export function AuthProvider({ children }) {
   const register = async ({ name, email, password }) => {
     const data = await api.post("/api/auth/register", { name, email, password });
     if (data?.user) {
+      if (data.token && typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem("gdg_auth_token", data.token);
+      }
       setUser(data.user);
     }
     return data?.user;
@@ -93,6 +124,9 @@ export function AuthProvider({ children }) {
     } catch (err) {
       console.error("Logout request failed:", err);
     } finally {
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.removeItem("gdg_auth_token");
+      }
       setUser(null);
       setTimeout(() => setIsLoggingOut(false), 500);
     }

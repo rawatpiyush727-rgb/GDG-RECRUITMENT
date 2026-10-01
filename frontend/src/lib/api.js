@@ -81,6 +81,14 @@ async function request(endpoint, options = {}) {
     Accept: 'application/json',
   };
 
+  const storedToken =
+    typeof window !== 'undefined' && window.localStorage
+      ? window.localStorage.getItem('gdg_auth_token')
+      : null;
+  if (storedToken) {
+    defaultHeaders['Authorization'] = `Bearer ${storedToken}`;
+  }
+
   if (!(options.body instanceof FormData)) {
     defaultHeaders['Content-Type'] = 'application/json';
   }
@@ -136,6 +144,9 @@ async function request(endpoint, options = {}) {
   }
 
   if (!response.ok) {
+    if (response.status === 401 && typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem('gdg_auth_token');
+    }
     const rawError = data?.error || data?.message || '';
     const fields = data?.fields || null;
     const sanitized = sanitizeErrorMessage(rawError, response.status);

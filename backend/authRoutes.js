@@ -37,13 +37,26 @@ function formatZodErrors(error) {
   return fields;
 }
 
-function setAuthCookie(res, token) {
-  res.cookie("token", token, {
+function getCookieOptions(req) {
+  const isHttps =
+    Boolean(req?.secure) ||
+    req?.headers?.["x-forwarded-proto"] === "https" ||
+    process.env.NODE_ENV === "production" ||
+    (process.env.FRONTEND_URL && process.env.FRONTEND_URL.startsWith("https"));
+
+  return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    secure: Boolean(isHttps),
+    sameSite: isHttps ? "none" : "lax",
     path: "/",
+  };
+}
+
+function setAuthCookie(res, token, req) {
+  const options = getCookieOptions(req);
+  res.cookie("token", token, {
+    ...options,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 }
 
@@ -101,10 +114,11 @@ router.post("/register", async (req, res) => {
     });
 
     const token = signToken(newUser._id, newUser.role);
-    setAuthCookie(res, token);
+    setAuthCookie(res, token, req);
 
     return res.status(201).json({
       user: sanitizeUser(newUser),
+      token,
     });
   } catch (err) {
     console.error("Registration error:", err);
@@ -145,10 +159,11 @@ router.post("/login", async (req, res) => {
     }
 
     const token = signToken(user._id, user.role);
-    setAuthCookie(res, token);
+    setAuthCookie(res, token, req);
 
     return res.json({
       user: sanitizeUser(user),
+      token,
     });
   } catch (err) {
     console.error("Login error:", err);
@@ -242,10 +257,11 @@ router.post("/google", async (req, res) => {
     }
 
     const token = signToken(user._id, user.role);
-    setAuthCookie(res, token);
+    setAuthCookie(res, token, req);
 
     return res.json({
       user: sanitizeUser(user),
+      token,
     });
   } catch (err) {
     console.error("Google auth error:", err);
@@ -255,19 +271,21 @@ router.post("/google", async (req, res) => {
 
 // GET /api/auth/me
 router.get("/me", authenticate, async (req, res) => {
+  const currentToken =
+    req.cookies?.token ||
+    (req.headers.authorization?.startsWith("Bearer ")
+      ? req.headers.authorization.slice(7)
+      : undefined);
+
   return res.json({
     user: sanitizeUser(req.user),
+    ...(currentToken ? { token: currentToken } : {}),
   });
 });
 
 // POST /api/auth/logout
 router.post("/logout", (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
+  res.clearCookie("token", getCookieOptions(req));
   return res.json({ ok: true });
 });
 
