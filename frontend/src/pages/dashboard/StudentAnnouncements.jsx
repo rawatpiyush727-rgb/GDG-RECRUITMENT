@@ -100,16 +100,30 @@ export default function StudentAnnouncements() {
                 className="p-5 rounded-xl border border-white/10 bg-[#10131d] hover:border-white/20 transition-colors"
               >
                 <div className="flex items-center justify-between gap-3 mb-2.5">
-                  <span
-                    className={cn(
-                      "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide border",
-                      isGlobal
-                        ? "bg-[#4285f4]/15 text-[#4285f4] border-[#4285f4]/30"
-                        : "bg-[#fbbc05]/15 text-[#fbbc05] border-[#fbbc05]/30"
-                    )}
-                  >
-                    {sourceLabel}
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={cn(
+                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide border",
+                        isGlobal
+                          ? "bg-[#4285f4]/15 text-[#4285f4] border-[#4285f4]/30"
+                          : "bg-[#fbbc05]/15 text-[#fbbc05] border-[#fbbc05]/30"
+                      )}
+                    >
+                      {sourceLabel}
+                    </span>
+                    {(() => {
+                      const author = ann.createdBy?.name;
+                      const cleanName =
+                        author === "GDG Super Admin" || author?.toLowerCase() === "super admin"
+                          ? "Piyush Rawat"
+                          : author;
+                      return cleanName ? (
+                        <span className="text-[11px] text-neutral-400">
+                          · by {cleanName}
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
                   <time
                     dateTime={ann.createdAt}
                     className="text-[11px] text-neutral-400"

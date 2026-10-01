@@ -469,11 +469,18 @@ export default function AdminAnnouncements() {
                       <span className="text-[11px] text-neutral-500">
                         {formatAnnDate(ann.createdAt)}
                       </span>
-                      {ann.createdBy?.name && (
-                        <span className="text-[11px] text-neutral-500">
-                          · by {ann.createdBy.name}
-                        </span>
-                      )}
+                      {(() => {
+                        const author = ann.createdBy?.name;
+                        const cleanName =
+                          author === "GDG Super Admin" || author?.toLowerCase() === "super admin"
+                            ? "Piyush Rawat"
+                            : author;
+                        return cleanName ? (
+                          <span className="text-[11px] text-neutral-500">
+                            · by {cleanName}
+                          </span>
+                        ) : null;
+                      })()}
                     </div>
                     <h4 className="text-base font-semibold text-white pt-1">
                       {ann.title}
